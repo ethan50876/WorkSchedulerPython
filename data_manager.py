@@ -28,7 +28,7 @@ def parse_employee_data(file_path: str) -> List[Employee]:
                     availability=tuple(map(int, row["Hours Available"].split('-'))),
                     min_hours=int(row["Min Hours"]),
                     max_hours=int(row["Max Hours"]),
-                    roles=set(map(str.strip, row["Roles"].split(','))),
+                    roles=set(map(str.strip, row["Roles"].replace('"', '').split(','))),  # Fix: Remove quotes
                     days_off=set(map(str.strip, row["Days Off"].split(','))) if row["Days Off"] else set()
                 ))
     except FileNotFoundError:
@@ -40,19 +40,28 @@ def parse_employee_data(file_path: str) -> List[Employee]:
 
     return employees
 
+
 def parse_employer_requirements(file_path: str) -> EmployerRequirements:
     try:
         with open(file_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
-            req_data = {}
+            critical_minimums = {}
+            work_hours = (0, 0)
+            shift_lengths = (0, 0)
+
             for row in reader:
-                req_data = {
-                    "work_hours": tuple(map(int, row["Scheduling Hours"].split('-'))),
-                    "shift_lengths": tuple(map(int, row["ShiftLengths"].split('-'))),
-                    "critical_minimums": {role.strip(): int(min_count) for role, min_count in zip(row["Roles"].split(','), row["Critical Minimums"].split(','))}
-                }
-                break  
-            return EmployerRequirements(**req_data)
+                role = row["Roles"].strip()
+                min_count = int(row["Critical Minimums"].strip())
+                critical_minimums[role] = min_count
+
+                work_hours = tuple(map(int, row["Scheduling Hours"].split('-')))
+                shift_lengths = tuple(map(int, row["ShiftLengths"].split('-')))
+
+            return EmployerRequirements(
+                work_hours=work_hours,
+                shift_lengths=shift_lengths,
+                critical_minimums=critical_minimums
+            )
 
     except FileNotFoundError:
         print(f"Error: File '{file_path}' not found.")
@@ -61,10 +70,11 @@ def parse_employer_requirements(file_path: str) -> EmployerRequirements:
         print(f"Error parsing employer requirements file: {e}")
         return None
 
+
 # test driver (data still missing)
 if __name__ == "__main__":
-    EMPLOYEE_FILE = "employees.csv"
-    REQUIREMENTS_FILE = "requirements.csv"
+    EMPLOYEE_FILE = "data/employees.csv"
+    REQUIREMENTS_FILE = "data/requirements.csv"
 
     employees = parse_employee_data(EMPLOYEE_FILE)
     employer_requirements = parse_employer_requirements(REQUIREMENTS_FILE)
