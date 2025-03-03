@@ -1,7 +1,5 @@
-from data_manager import Employee, EmployerRequirements, parse_employee_data, parse_employer_requirements
+from data_manager import Employee, EmployerRequirements, ShiftSchedule, parse_employee_data, parse_employer_requirements
 from typing import Dict, List, Tuple, Optional
-
-ShiftSchedule = Dict[str, Dict[int, Dict[str, List[Employee]]]]
 
 
 def is_valid_assignment(
@@ -15,23 +13,32 @@ def is_valid_assignment(
     reqs: EmployerRequirements,
 ) -> bool:
     """Checks if an employee can be assigned a shift while satisfying all constraints."""
+
+    """ Pretty sure these are not needed anymore
+    
     print(f"Checking {employee.name} for role {role} on {day} at {start_hour} for {shift_length} hours.")
 
     if weekly_assigned_hours[employee.name] + shift_length > employee.max_hours:
         print(f"  -> {employee.name} rejected: Exceeds max weekly hours.")
         return False
-
-    if day in daily_shifts.get(employee.name, []):
-        print(f"  -> {employee.name} rejected: Already assigned on {day}.")
-        return False
+    
+    if start_hour < employee.availability[0] or start_hour + shift_length > employee.availability[1]:
+        print(f"  -> {employee.name} rejected: Outside of hourly availability.")
 
     if day in employee.days_off:
         print(f"  -> {employee.name} rejected: Day off.")
         return False
 
-    if start_hour < employee.availability[0] or start_hour + shift_length > reqs.work_hours[1]:
+    if day in daily_shifts.get(employee.name, []):
+        print(f"  -> {employee.name} rejected: Already assigned on {day}.")
+        return False
+    
+
+    
+    if start_hour + shift_length > reqs.work_hours[1]:
         print(f"  -> {employee.name} rejected: Shift exceeds store hours.")
         return False
+    """
 
     return True
 
@@ -116,13 +123,32 @@ def solve_schedule(
 ) -> bool:
     """Recursive backtracking function to assign employees to shifts."""
     if index == len(days):
-        print("[Recursion Complete] All days filled. Validating final critical minimums...")
-        return all(meets_critical_minimums_for_day(schedule, reqs, day) for day in days)
+
+        if all(meets_critical_minimums_for_day(schedule, reqs, day) for day in days):
+            print("[Recursion Complete] All critical minimums filled")
+            
+            """
+            # Assign employees to meet minimum hours
+            unmet_hours_employees = {emp for emp in employees if weekly_assigned_hours[emp.name] < emp.min_hours}
+            
+            for employee in unmet_hours_employees:
+                if weekly_assigned_hours[employee.name] < shift_lengths[0]:
+                    # Try to Extend existing shifts
+
+                else:
+                    # Assign new shifts
+            """
+
+            return True
+
 
     day = days[index]
     print(f"\n--- Processing {day} ---")
 
-    available_employees = {role: [e for e in employees if role in e.roles and day not in e.days_off] for role in reqs.critical_minimums}
+    available_employees = {role: [e for e in employees if role in e.roles 
+                                  and (day not in e.days_off)
+                                  and (day not in daily_shifts.get(e.name, []))]  # Filter out employees already assigned for the day
+                                  for role in reqs.critical_minimums}
 
     for start_hour in sorted(hours):
         print(f"\n--- Assigning shifts for {day} at {start_hour}:00 ---")
@@ -136,10 +162,15 @@ def solve_schedule(
 
             for _ in range(required_count - assigned_count):  # Try to assign remaining needed employees
                 assigned = False
-                for employee in available_employees.get(role, []):
-                    for shift_length in range(shift_lengths[0], shift_lengths[1] + 1):
+                for employee in [e for e in available_employees.get(role, []) if e.availability[0] <= start_hour]:
+                    for shift_length in range(shift_lengths[0], min(shift_lengths[1], 
+                                                                    reqs.work_hours[1] - start_hour,
+                                                                    employee.availability[1] - start_hour) + 1):
+                        
+                        """
                         if start_hour + shift_length > reqs.work_hours[1]:
                             continue
+                        """
 
                         if is_valid_assignment(employee, role, day, start_hour, shift_length, weekly_assigned_hours, daily_shifts, reqs):
                             update_schedule(employee, role, day, start_hour, shift_length, schedule, weekly_assigned_hours, daily_shifts)

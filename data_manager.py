@@ -11,11 +11,13 @@ class Employee:
     roles: Set[str]
     days_off: Set[str]
 
+ShiftSchedule = Dict[str, Dict[int, Dict[str, List[Employee]]]]  # {Day: {Hour: {Role: [Employee]}}}
+
 @dataclass
 class EmployerRequirements:
     work_hours: Tuple[int, int]  # (open_hour, close_hour)
     shift_lengths: Tuple[int, int]  # (min_shift, max_shift)
-    critical_minimums: Dict[str, int]  # {Role: Minimum Employees Required}
+    critical_minimums: Dict[str, int]  # {Role: Minimum Employees Required}   
 
 def parse_employee_data(file_path: str) -> List[Employee]:
     employees = []
