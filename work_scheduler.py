@@ -212,9 +212,6 @@ def assign_extra_shifts(
 
 
 
-
-import sys
-
 def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[ShiftSchedule]:
     """Runs the scheduling process from start to finish."""
     employees = parse_employee_data(employee_file)
