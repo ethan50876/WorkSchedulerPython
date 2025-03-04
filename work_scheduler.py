@@ -30,7 +30,7 @@ def is_valid_assignment(
         print(f"  -> {employee.name} rejected: Day off.")
         return False
 
-    if start_hour < employee.availability[0] or start_hour + shift_length > reqs.work_hours[1]:
+    if start_hour < employee.availability[0] or start_hour + shift_length > reqs.work_hours[1] or start_hour + shift_length > employee.availability[1]:
         print(f"  -> {employee.name} rejected: Shift exceeds store hours.")
         return False
 
@@ -234,7 +234,9 @@ def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[Shif
         
         if solve_schedule(days, hours, shift_lengths, employees, reqs, schedule, weekly_assigned_hours, daily_shifts, 0):
             assign_extra_shifts(schedule, employees, reqs, weekly_assigned_hours, daily_shifts)
-    
+        else:
+            schedule = None
+
     # Restore normal print output after schedule generation
     sys.stdout = original_stdout
     
@@ -259,7 +261,7 @@ def print_schedule(schedule: ShiftSchedule, output_file: str):
             schedule_file.write("\n")
 
 if __name__ == "__main__":
-    EMPLOYEE_FILEPATH = "data/validEmps2.csv"
+    EMPLOYEE_FILEPATH = "data/impossibleEmps3.csv"
     REQUIREMENTS_FILEPATH = "data/validReqs1.csv"
     OUTPUT_FILEPATH = "output/"
 

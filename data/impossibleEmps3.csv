@@ -1,0 +1,13 @@
+Name,Hours Available,Min Hours,Max Hours,Roles,Days Off
+Alice,9-16,5,10,"Supervisor,Cashier",Monday
+Bill,9-18,5,10,Supervisor,Saturday
+Carol,12-18,5,10,"Cashier,On-Floor",Monday
+David,9-18,5,10,Cashier,Friday
+Eric,11-18,5,10,"Cashier,On-Floor",Sunday
+Frank,9-16,5,10,On-Floor,Thursday
+Grace,12-18,5,10,"Supervisor,Cashier,On-Floor",
+Hannah,9-18,5,10,"Cashier,On-Floor",
+Issac,12-18,5,10,On-Floor,Wednesday
+Jack,9-14,5,10,"Cashier,On-Floor",
+Kate,12-18,5,10,On-Floor,Tuesday
+Emily,9-18,5,10,"Supervisor,Cashier,On-Floor",
