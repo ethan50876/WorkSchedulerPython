@@ -171,8 +171,6 @@ def solve_schedule(
 
                 # If still not enough hours, assign new shifts
 
-                possible
-
 
 
             return schedule
@@ -202,6 +200,9 @@ def solve_schedule(
                     for shift_length in range(shift_lengths[0], min(shift_lengths[1], 
                                                                     reqs.work_hours[1] - start_hour,
                                                                     employee.availability[1] - start_hour) + 1):
+                        
+                        if weekly_assigned_hours[employee.name] + shift_length > employee.max_hours:
+                            continue
                         
                         """
                         if start_hour + shift_length > reqs.work_hours[1]:
