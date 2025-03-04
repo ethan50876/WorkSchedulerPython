@@ -227,7 +227,7 @@ def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[Shif
 
     # Redirect print output to debug.txt
     original_stdout = sys.stdout
-    with open("debug.txt", "w") as debug_log:
+    with open("output/debug.txt", "w") as debug_log:
         sys.stdout = debug_log
         
         solve_schedule(days, hours, shift_lengths, employees, reqs, schedule, weekly_assigned_hours, daily_shifts, 0)
@@ -239,9 +239,9 @@ def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[Shif
     return schedule if schedule else None
 
 
-def print_schedule(schedule: ShiftSchedule):
+def print_schedule(schedule: ShiftSchedule, output_file: str):
     """Writes the final generated schedule to a file."""
-    with open("schedule.txt", "w") as schedule_file:
+    with open(output_file, "w") as schedule_file:
         schedule_file.write("\nGenerated Schedule:\n\n")
         for day, hours in schedule.items():
             schedule_file.write(f"{day}:\n")
@@ -260,6 +260,7 @@ def print_schedule(schedule: ShiftSchedule):
 if __name__ == "__main__":
     EMPLOYEE_FILE = "data/employees.csv"
     REQUIREMENTS_FILE = "data/requirements.csv"
+    OUTPUT_FILE = "output/schedule.csv"
 
     schedule = schedule_shifts(EMPLOYEE_FILE, REQUIREMENTS_FILE)
-    print_schedule(schedule)
+    print_schedule(schedule, OUTPUT_FILE)
