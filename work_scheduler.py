@@ -171,7 +171,9 @@ def assign_extra_shifts(
     """
     Ensures that all employees meet their minimum hours by assigning extra shifts as 'Floater'.
     Distributes extra shifts evenly so that the least staffed day is not 50% less than any other day.
+    Exception: if the employee's hours remaining are less than the minimum shift length, they will not be assigned.
     """
+
     print("\nAssigning extra shifts to under-scheduled employees...")
     under_min_hours = [emp for emp in employees if weekly_assigned_hours[emp.name] < emp.min_hours]
     
@@ -230,8 +232,8 @@ def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[Shif
     with open("output/debug.txt", "w") as debug_log:
         sys.stdout = debug_log
         
-        solve_schedule(days, hours, shift_lengths, employees, reqs, schedule, weekly_assigned_hours, daily_shifts, 0)
-        assign_extra_shifts(schedule, employees, reqs, weekly_assigned_hours, daily_shifts)
+        if solve_schedule(days, hours, shift_lengths, employees, reqs, schedule, weekly_assigned_hours, daily_shifts, 0):
+            assign_extra_shifts(schedule, employees, reqs, weekly_assigned_hours, daily_shifts)
     
     # Restore normal print output after schedule generation
     sys.stdout = original_stdout
@@ -256,11 +258,21 @@ def print_schedule(schedule: ShiftSchedule, output_file: str):
                 schedule_file.write(f"{hour}:00 - {', '.join(assigned_roles)}\n")
             schedule_file.write("\n")
 
-
 if __name__ == "__main__":
-    EMPLOYEE_FILE = "data/employees.csv"
-    REQUIREMENTS_FILE = "data/requirements.csv"
-    OUTPUT_FILE = "output/schedule.csv"
+    EMPLOYEE_FILEPATH = "data/validEmps2.csv"
+    REQUIREMENTS_FILEPATH = "data/validReqs1.csv"
+    OUTPUT_FILEPATH = "output/"
 
-    schedule = schedule_shifts(EMPLOYEE_FILE, REQUIREMENTS_FILE)
-    print_schedule(schedule, OUTPUT_FILE)
+    schedule = schedule_shifts(EMPLOYEE_FILEPATH, REQUIREMENTS_FILEPATH)
+
+    def extract_filename(filepath: str) -> str:
+        return filepath.split('/')[-1].split('.')[0]
+
+    employeeFilename = extract_filename(EMPLOYEE_FILEPATH)
+    requirementsFilename = extract_filename(REQUIREMENTS_FILEPATH)
+
+    if schedule != None:
+        print_schedule(schedule, OUTPUT_FILEPATH + f"{employeeFilename}_{requirementsFilename}_schedule.csv")
+        print("Schedule generation complete. Output saved to 'output/' directory.")
+    else:
+        print("Error: Schedule generation failed. Check 'output/debug.txt' for details.")
