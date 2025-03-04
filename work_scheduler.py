@@ -1,5 +1,6 @@
 from data_manager import Employee, EmployerRequirements, parse_employee_data, parse_employer_requirements
 from typing import Dict, List, Tuple, Optional
+import sys
 
 ShiftSchedule = Dict[str, Dict[int, Dict[str, List[Employee]]]]
 
@@ -212,6 +213,8 @@ def assign_extra_shifts(
 
 
 
+import sys
+
 def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[ShiftSchedule]:
     """Runs the scheduling process from start to finish."""
     employees = parse_employee_data(employee_file)
@@ -225,35 +228,41 @@ def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[Shif
     weekly_assigned_hours = {emp.name: 0 for emp in employees}
     daily_shifts = {}
 
-    solve_schedule(days, hours, shift_lengths, employees, reqs, schedule, weekly_assigned_hours, daily_shifts, 0)
-    assign_extra_shifts(schedule, employees, reqs, weekly_assigned_hours, daily_shifts)
-
+    # Redirect print output to debug.txt
+    original_stdout = sys.stdout
+    with open("debug.txt", "w") as debug_log:
+        sys.stdout = debug_log
+        
+        solve_schedule(days, hours, shift_lengths, employees, reqs, schedule, weekly_assigned_hours, daily_shifts, 0)
+        assign_extra_shifts(schedule, employees, reqs, weekly_assigned_hours, daily_shifts)
+    
+    # Restore normal print output after schedule generation
+    sys.stdout = original_stdout
+    
     return schedule if schedule else None
 
 
-def print_schedule(schedule: ShiftSchedule, output_file: str):
-    """Prints the final generated schedule to a file in a readable format."""
-    with open(output_file, 'w') as f:
-        f.write("Generated Schedule:\n\n")
+def print_schedule(schedule: ShiftSchedule):
+    """Writes the final generated schedule to a file."""
+    with open("schedule.txt", "w") as schedule_file:
+        schedule_file.write("\nGenerated Schedule:\n\n")
         for day, hours in schedule.items():
-            f.write(f"{day}:\n")
+            schedule_file.write(f"{day}:\n")
             for hour, roles in sorted(hours.items()):
                 assigned_roles = []
                 for role, employees in roles.items():
-                    if isinstance(employees, list):  
+                    if isinstance(employees, list):
                         for emp in employees:
                             assigned_roles.append(f"({role}) {emp.name}")
                     else:
                         assigned_roles.append(f"({role}) {employees.name}")
-                f.write(f"{hour}:00 - {', '.join(assigned_roles)}\n")
-            f.write("\n")
-
+                schedule_file.write(f"{hour}:00 - {', '.join(assigned_roles)}\n")
+            schedule_file.write("\n")
 
 
 if __name__ == "__main__":
     EMPLOYEE_FILE = "data/employees.csv"
     REQUIREMENTS_FILE = "data/requirements.csv"
-    OUTPUT_FILE = "output/schedule.csv"
 
     schedule = schedule_shifts(EMPLOYEE_FILE, REQUIREMENTS_FILE)
-    print_schedule(schedule, OUTPUT_FILE)
+    print_schedule(schedule)
