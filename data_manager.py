@@ -4,8 +4,19 @@ from typing import List, Tuple, Set, Dict
 
 @dataclass
 class Employee:
+    """
+A class to represent an Employee.
+
+Attributes:
+    name (str): The name of the employee.
+    availability (Tuple[int, int]): Start and end hours of availability, (start_hour, end_hour)
+    min_hours (int): The minimum number of hours the employee can work.
+    max_hours (int): The maximum number of hours the employee can work.
+    roles (Set[str]): A set of roles the employee can perform, eg. set[On-Floor, Cashier]
+    days_off (Set[str]): A set of days the employee is not available to work, eg
+"""
     name: str
-    availability: Tuple[int, int]  # (start_hour, end_hour)
+    availability: Tuple[int, int] 
     min_hours: int
     max_hours: int
     roles: Set[str]
@@ -15,11 +26,37 @@ ShiftSchedule = Dict[str, Dict[int, Dict[str, List[Employee]]]]  # {Day: {Hour: 
 
 @dataclass
 class EmployerRequirements:
+    """
+EmployerRequirements is a data class that holds the requirements for an employer's scheduling needs.
+
+Attributes:
+    work_hours (Tuple[int, int]): A Tuple holding the opening and closing hours of the workplace.
+    shift_lengths (Tuple[int, int]): A tuple representing the minimum and maximum lengths of shifts.
+    critical_minimums (Dict[str, int]): A dictionary mapping roles to the minimum number of employees required for each role.
+"""
     work_hours: Tuple[int, int]  # (open_hour, close_hour)
     shift_lengths: Tuple[int, int]  # (min_shift, max_shift)
     critical_minimums: Dict[str, int]  # {Role: Minimum Employees Required}   
 
 def parse_employee_data(file_path: str) -> List[Employee]:
+    """
+    Parses employee data from a CSV file and returns a list of Employee objects.
+    Args:
+        file_path (str): The path to the CSV file containing employee data.
+    Returns:
+        List[Employee]: A list of Employee objects parsed from the CSV file.
+        If the file is not found or an error occurs during parsing, an empty list is returned.
+    The CSV file is expected to have the following columns:
+        - Name: The name of the employee.
+        - Hours Available: The hours the employee is available, in the format 'start-end'.
+        - Min Hours: The minimum number of hours the employee can work.
+        - Max Hours: The maximum number of hours the employee can work.
+        - Roles: The roles the employee can perform, separated by commas.
+        - Days Off: The days the employee has off, separated by commas (optional).
+    Raises:
+        FileNotFoundError: If the specified file is not found.
+        Exception: If an error occurs during parsing.
+    """
     employees = []
     try:
         with open(file_path, newline='') as csvfile:
@@ -44,6 +81,20 @@ def parse_employee_data(file_path: str) -> List[Employee]:
 
 
 def parse_employer_requirements(file_path: str) -> EmployerRequirements:
+    """
+    Parses the employer requirements from a CSV file.
+    The CSV file must have the following columns:
+    - Roles: The role name.
+    - Critical Minimums: The minimum number of employees required for the role.
+    - Scheduling Hours: The range of hours during which scheduling is allowed, in the format 'start-end'.
+    - ShiftLengths: The range of shift lengths allowed, in the format 'min-max'.
+    Args:
+        file_path (str): The path to the CSV file containing employer requirements.
+    Returns:
+        EmployerRequirements: An object containing the parsed employer requirements, including work hours,
+                              shift lengths, and critical minimums for each role. Returns None if the file
+                              is not found or if there is an error during parsing.
+    """
     try:
         with open(file_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
@@ -73,7 +124,7 @@ def parse_employer_requirements(file_path: str) -> EmployerRequirements:
         return None
 
 
-# test driver (data still missing)
+# test driver
 if __name__ == "__main__":
     EMPLOYEE_FILE = "data/employees.csv"
     REQUIREMENTS_FILE = "data/requirements.csv"
