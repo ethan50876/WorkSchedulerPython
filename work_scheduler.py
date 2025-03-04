@@ -2,8 +2,8 @@ from data_manager import Employee, EmployerRequirements, parse_employee_data, pa
 from typing import Dict, List, Tuple, Optional
 import sys
 
+# {day: {hour: {role: [Employee]}}}
 ShiftSchedule = Dict[str, Dict[int, Dict[str, List[Employee]]]]
-
 
 def is_valid_assignment(
     employee: Employee,
@@ -11,11 +11,24 @@ def is_valid_assignment(
     day: str,
     start_hour: int,
     shift_length: int,
-    weekly_assigned_hours: Dict[str, int],
-    daily_shifts: Dict[str, List[str]],
+    weekly_assigned_hours: Dict[str, int], # {employee_name: hours_assigned}
+    daily_shifts: Dict[str, List[str]], # {employee_name: [days_assigned]}
     reqs: EmployerRequirements,
 ) -> bool:
-    """Checks if an employee can be assigned a shift while satisfying all constraints."""
+    """
+    Checks if an employee can be assigned a shift while satisfying all constraints.
+    Args:
+        employee (Employee): The employee to be assigned the shift.
+        role (str): The role the employee will be assigned to.
+        day (str): The day of the week for the shift.
+        start_hour (int): The starting hour of the shift (24-hour format).
+        shift_length (int): The length of the shift in hours.
+        weekly_assigned_hours (Dict[str, int]): A dictionary mapping employee names to their current total weekly hours.
+        daily_shifts (Dict[str, List[str]]): A dictionary mapping employee names to the list of days they are assigned shifts.
+        reqs (EmployerRequirements): The employer's requirements including work hours and other constraints.
+    Returns:
+        bool: True if the assignment is valid, False otherwise.
+    """
     print(f"Checking {employee.name} for role {role} on {day} at {start_hour} for {shift_length} hours.")
 
     if weekly_assigned_hours[employee.name] + shift_length > employee.max_hours:
@@ -38,7 +51,16 @@ def is_valid_assignment(
 
 
 def meets_critical_minimums_for_day(schedule: ShiftSchedule, reqs: EmployerRequirements, day: str) -> bool:
-    """Checks if the schedule meets all role minimums for a specific day."""
+    """
+    Checks if the schedule meets all role minimums for a specific day.
+    Args:
+        schedule (ShiftSchedule): The schedule containing assignments for each day and hour.
+        reqs (EmployerRequirements): The requirements specifying the critical minimums for each role.
+        day (str): The specific day to check the schedule for.
+    Returns:
+        bool: True if all shifts for the specified day meet the critical minimums, False otherwise.
+    """
+ 
     print(f"Validating critical minimums for {day}...")
     for hour, assignments in schedule[day].items():
         role_count = {role: len(assignments.get(role, [])) for role in reqs.critical_minimums.keys()}
@@ -61,7 +83,22 @@ def update_schedule(
     weekly_assigned_hours: Dict[str, int],
     daily_shifts: Dict[str, List[str]],
 ):
-    """Assigns an employee to a shift in the schedule."""
+    """
+    Assigns an employee to a shift in the schedule.
+    Args:
+        employee (Employee): The employee to be assigned to the shift.
+        role (str): The role the employee will be performing during the shift.
+        day (str): The day of the week for the shift (e.g., 'Monday').
+        start_hour (int): The starting hour of the shift (24-hour format).
+        shift_length (int): The length of the shift in hours.
+        schedule (ShiftSchedule): The current shift schedule.
+        weekly_assigned_hours (Dict[str, int]): A dictionary tracking the total hours assigned to each employee for the week.
+        daily_shifts (Dict[str, List[str]]): A dictionary tracking the days each employee is assigned to work.
+    Prints to log:
+        A message indicating the assignment of the employee to the shift.
+        A message listing all employees assigned to the same time block after the assignment.
+    """
+
     for hour in range(start_hour, start_hour + shift_length):
         if hour not in schedule[day]:
             schedule[day][hour] = {}
@@ -81,7 +118,6 @@ def update_schedule(
         print(f"     - ({assigned_role}): {assigned_emp_names}")
 
 
-
 def remove_assignment(
     employee: Employee,
     role: str,
@@ -92,7 +128,21 @@ def remove_assignment(
     weekly_assigned_hours: Dict[str, int],
     daily_shifts: Dict[str, List[str]],
 ):
-    """Removes an employee from a shift in the schedule (for backtracking)."""
+    """
+    Removes an employee from a shift in the schedule (used for backtracking).
+    Args:
+        employee (Employee): The employee to be removed from the shift.
+        role (str): The role assigned to the employee.
+        day (str): The day of the shift.
+        start_hour (int): The starting hour of the shift.
+        shift_length (int): The length of the shift in hours.
+        schedule (ShiftSchedule): The current shift schedule.
+        weekly_assigned_hours (Dict[str, int]): A dictionary tracking the weekly assigned hours for each employee.
+        daily_shifts (Dict[str, List[str]]): A dictionary tracking the days each employee is assigned to shifts.
+    Returns:
+        None
+    """
+
     for hour in range(start_hour, start_hour + shift_length):
         if role in schedule[day][hour] and employee in schedule[day][hour][role]:
             schedule[day][hour][role].remove(employee)
@@ -115,7 +165,21 @@ def solve_schedule(
     daily_shifts: Dict[str, List[str]],
     index: int,
 ) -> bool:
-    """Recursive backtracking function to assign employees to shifts."""
+    """
+    Recursive backtracking function to assign employees to shifts.
+    Args:
+        days (List[str]): List of days to schedule that is iterated over recursively.
+        hours (List[int]): List of hours in a day to consider for shifts.
+        shift_lengths (Tuple[int, int]): Minimum and maximum shift lengths.
+        employees (List[Employee]): List of Employee objects available for scheduling.
+        reqs (EmployerRequirements): Object containing employer's requirements including critical minimums and work hours.
+        schedule (ShiftSchedule): Current shift schedule being built.
+        weekly_assigned_hours (Dict[str, int]): Dictionary tracking total weekly hours assigned for each employee.
+        daily_shifts (Dict[str, List[str]]): Dictionary tracking days worked for each employee, {employee_name: [days]}.
+        index (int): Current index in the days list being processed.
+    Returns:
+        bool: True if a valid schedule is found, False otherwise.
+    """
     if index == len(days):
         print("[Recursion Complete] All days filled. Validating final critical minimums...")
         return all(meets_critical_minimums_for_day(schedule, reqs, day) for day in days)
@@ -172,6 +236,14 @@ def assign_extra_shifts(
     Ensures that all employees meet their minimum hours by assigning extra shifts as 'Floater'.
     Distributes extra shifts evenly so that the least staffed day is not 50% less than any other day.
     Exception: if the employee's hours remaining are less than the minimum shift length, they will not be assigned.
+    Args:
+        schedule (ShiftSchedule): The current shift schedule.
+        employees (List[Employee]): List of employees to be scheduled.
+        reqs (EmployerRequirements): Requirements set by the employer, including work hours and shift lengths.
+        weekly_assigned_hours (Dict[str, int]): Dictionary mapping employee names to their currently assigned weekly hours.
+        daily_shifts (Dict[str, List[str]]): Dictionary mapping employee names to their assigned shifts per day.
+    Returns:
+        None
     """
 
     print("\nAssigning extra shifts to under-scheduled employees...")
@@ -215,7 +287,15 @@ def assign_extra_shifts(
 
 
 def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[ShiftSchedule]:
-    """Runs the scheduling process from start to finish."""
+    """
+    Runs the scheduling process from start to finish.
+    Args:
+        employee_file (str): Path to the file containing employee data.
+        requirements_file (str): Path to the file containing employer requirements.
+    Returns:
+        Optional[ShiftSchedule]: A dictionary representing the shift schedule if successful, 
+        otherwise None.
+    """
     employees = parse_employee_data(employee_file)
     reqs = parse_employer_requirements(requirements_file)
 
@@ -244,7 +324,15 @@ def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[Shif
 
 
 def print_schedule(schedule: ShiftSchedule, output_file: str):
-    """Writes the final generated schedule to a file."""
+    """
+    Writes the final generated schedule to a file.
+
+    Args:
+        schedule (ShiftSchedule): A dictionary representing the schedule.
+                                  {day: {hour: {role: [Employee]}}}
+
+        output_file (str): The path to the file where the schedule will be written.
+    """
     with open(output_file, "w") as schedule_file:
         schedule_file.write("\nGenerated Schedule:\n\n")
         for day, hours in schedule.items():
@@ -261,6 +349,13 @@ def print_schedule(schedule: ShiftSchedule, output_file: str):
             schedule_file.write("\n")
 
 if __name__ == "__main__":
+    """
+    Main function:
+        - Defines filepaths
+        - Calls schedule_shifts
+        - Calls print_schedule or outputs error message
+    """
+
     EMPLOYEE_FILEPATH = "data/impossibleEmps3.csv"
     REQUIREMENTS_FILEPATH = "data/validReqs1.csv"
     OUTPUT_FILEPATH = "output/"
@@ -268,6 +363,7 @@ if __name__ == "__main__":
     schedule = schedule_shifts(EMPLOYEE_FILEPATH, REQUIREMENTS_FILEPATH)
 
     def extract_filename(filepath: str) -> str:
+
         return filepath.split('/')[-1].split('.')[0]
 
     employeeFilename = extract_filename(EMPLOYEE_FILEPATH)
