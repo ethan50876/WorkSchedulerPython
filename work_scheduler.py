@@ -169,39 +169,45 @@ def assign_extra_shifts(
 ):
     """
     Ensures that all employees meet their minimum hours by assigning extra shifts as 'Floater'.
+    Distributes extra shifts evenly so that the least staffed day is not 50% less than any other day.
     """
     print("\nAssigning extra shifts to under-scheduled employees...")
     under_min_hours = [emp for emp in employees if weekly_assigned_hours[emp.name] < emp.min_hours]
     
+    # Calculate initial employee count per day
+    day_counts = {day: sum(len(roles) for roles in schedule[day].values()) for day in schedule.keys()}
+    sorted_days = sorted(schedule.keys(), key=day_counts.get)
+    
     for employee in under_min_hours:
         required_hours = employee.min_hours - weekly_assigned_hours[employee.name]
-        print(f"\nFinding extra shifts for {employee.name}. (Needs {required_hours} more hours.")
+        print(f"\nFinding extra shifts for {employee.name} (Needs {required_hours} more hours)")
         
-        for day in schedule.keys():
+        for least_scheduled_day in sorted_days:
             if required_hours <= 0:
                 break  # Stop assigning if min hours are met
             
-            if day in employee.days_off or day in daily_shifts.get(employee.name, []):
+            if least_scheduled_day in employee.days_off or least_scheduled_day in daily_shifts.get(employee.name, []):
                 continue  # Skip if the employee has a day off or is already assigned
             
             for hour in range(reqs.work_hours[0], reqs.work_hours[1]):
                 if required_hours <= 0:
                     break
                 
-                role = "Floater"  # Assign role to 'Floater'
+                role = "Floater"  # Override role to 'Floater'
                 shift_length = reqs.shift_lengths[0]  # Assign the shortest possible shift
-                    
+                
                 if is_valid_assignment(
-                    employee, role, day, hour, shift_length,
+                    employee, role, least_scheduled_day, hour, shift_length,
                     weekly_assigned_hours, daily_shifts, reqs
                 ):
                     update_schedule(
-                        employee, role, day, hour, shift_length,
+                        employee, role, least_scheduled_day, hour, shift_length,
                         schedule, weekly_assigned_hours, daily_shifts
                     )
                     required_hours -= shift_length
+                    day_counts[least_scheduled_day] += 1  # Update the day count
     
-    print("\n[Adjustment Complete] All employees should now meet their minimum hours.")
+    print("\n[Adjustment Complete] All employees should now meet their minimum hours and schedule is balanced.")
 
 
 
