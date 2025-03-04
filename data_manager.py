@@ -13,6 +13,29 @@ class Employee:
 
 ShiftSchedule = Dict[str, Dict[int, Dict[str, List[Employee]]]]  # {Day: {Hour: {Role: [Employee]}}}
 
+
+"""
+@dataclass
+class ShiftDistribution:
+    
+    shift_ranges: Dict[str, Dict[str, List[Tuple[int, int]]]] = {}  # {Role: {EmployeeCount: [(start_hour, end_hour)]}}
+
+    def __init__(self, schedule: ShiftSchedule):
+        self.shift_ranges = self._generate_shift_ranges(schedule)
+
+    def _generate_shift_ranges(self, schedule: ShiftSchedule) -> Dict[str, Dict[str, List[Tuple[int, int]]]]:
+        shift_ranges = {}
+        for day, shifts in schedule.items():
+            for hour, roles in shifts.items():
+                for role, employees in roles.items():
+                    for employee in employees:
+                        if role not in shift_ranges:
+                            shift_ranges[role] = {}
+                        if employee.name not in shift_ranges[role]:
+                            shift_ranges[role][employee.name] = []
+                        shift_ranges[role][employee.name].append((hour, hour + 1))
+"""
+
 @dataclass
 class EmployerRequirements:
     work_hours: Tuple[int, int]  # (open_hour, close_hour)
