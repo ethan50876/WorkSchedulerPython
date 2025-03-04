@@ -231,27 +231,29 @@ def schedule_shifts(employee_file: str, requirements_file: str) -> Optional[Shif
     return schedule if schedule else None
 
 
-def print_schedule(schedule: ShiftSchedule):
-    """Prints the final generated schedule in a readable format."""
-    print("\nGenerated Schedule:\n")
-    for day, hours in schedule.items():
-        print(f"{day}:")
-        for hour, roles in sorted(hours.items()):
-            assigned_roles = []
-            for role, employees in roles.items():
-                if isinstance(employees, list):  
-                    for emp in employees:
-                        assigned_roles.append(f"({role}) {emp.name}")
-                else:
-                    assigned_roles.append(f"({role}) {employees.name}")
-            print(f"{hour}:00 - {', '.join(assigned_roles)}")
-        print()
+def print_schedule(schedule: ShiftSchedule, output_file: str):
+    """Prints the final generated schedule to a file in a readable format."""
+    with open(output_file, 'w') as f:
+        f.write("Generated Schedule:\n\n")
+        for day, hours in schedule.items():
+            f.write(f"{day}:\n")
+            for hour, roles in sorted(hours.items()):
+                assigned_roles = []
+                for role, employees in roles.items():
+                    if isinstance(employees, list):  
+                        for emp in employees:
+                            assigned_roles.append(f"({role}) {emp.name}")
+                    else:
+                        assigned_roles.append(f"({role}) {employees.name}")
+                f.write(f"{hour}:00 - {', '.join(assigned_roles)}\n")
+            f.write("\n")
 
 
 
 if __name__ == "__main__":
     EMPLOYEE_FILE = "data/employees.csv"
     REQUIREMENTS_FILE = "data/requirements.csv"
+    OUTPUT_FILE = "output/schedule.csv"
 
     schedule = schedule_shifts(EMPLOYEE_FILE, REQUIREMENTS_FILE)
-    print_schedule(schedule)
+    print_schedule(schedule, OUTPUT_FILE)
